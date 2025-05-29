@@ -88,7 +88,7 @@ module "eks" {
   cluster_version = var.k8s_version
 
   vpc_id     = data.aws_vpc.default.id
-  subnet_ids = data.aws_subnet_ids.default.ids
+  subnet_ids = data.aws_subnets.default.ids
 
   # Defaults para todos os managed node groups
   eks_managed_node_group_defaults = {
