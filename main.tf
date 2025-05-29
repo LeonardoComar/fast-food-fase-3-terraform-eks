@@ -39,8 +39,11 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 ########################################
@@ -53,24 +56,25 @@ resource "aws_ecr_repository" "app_repo" {
   image_scanning_configuration {
     scan_on_push = true
   }
+}
 
-  # Política de ciclo de vida para manter apenas as 5 imagens mais recentes
-  lifecycle_policy {
-    policy = jsonencode({
-      rules = [{
-        rulePriority = 1
-        description  = "Keep last 5 images"
-        selection = {
-          tagStatus   = "any"
-          countType   = "imageCountMoreThan"
-          countNumber = 5
-        }
-        action = {
-          type = "expire"
-        }
-      }]
-    })
-  }
+resource "aws_ecr_lifecycle_policy" "app_repo_policy" {
+  repository = aws_ecr_repository.app_repo.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 5 images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 5
+      }
+      action = {
+        type = "expire"
+      }
+    }]
+  })
 }
 
 ########################################
