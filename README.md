@@ -6,4 +6,3 @@
 - terraform init
 - terraform plan
 - terraform apply
-- aws rds describe-db-instances

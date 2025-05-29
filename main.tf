@@ -26,8 +26,8 @@ provider "aws" {
 data "terraform_remote_state" "rds" {
   backend = "s3"
   config = {
-    bucket = var.rds_state_bucket   # ex.: "my-terraform-states"
-    key    = var.rds_state_key      # ex.: "rds/terraform.tfstate"
+    bucket = var.rds_state_bucket
+    key    = var.rds_state_key
     region = var.aws_region
   }
 }
@@ -41,6 +41,36 @@ data "aws_vpc" "default" {
 
 data "aws_subnet_ids" "default" {
   vpc_id = data.aws_vpc.default.id
+}
+
+########################################
+# ECR Repository
+########################################
+resource "aws_ecr_repository" "app_repo" {
+  name                 = var.ecr_repository_name
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  # Política de ciclo de vida para manter apenas as 5 imagens mais recentes
+  lifecycle_policy {
+    policy = jsonencode({
+      rules = [{
+        rulePriority = 1
+        description  = "Keep last 5 images"
+        selection = {
+          tagStatus     = "any"
+          countType     = "imageCountMoreThan"
+          countNumber   = 5
+        }
+        action = {
+          type = "expire"
+        }
+      }]
+    })
+  }
 }
 
 ########################################
@@ -116,7 +146,7 @@ resource "kubernetes_deployment" "app" {
       spec {
         container {
           name  = var.app_name
-          image = "${var.dockerhub_repo}:${var.app_image_tag}"
+          image = "${aws_ecr_repository.app_repo.repository_url}:${var.app_image_tag}"
 
           port {
             container_port = var.app_container_port
@@ -163,6 +193,24 @@ resource "kubernetes_service" "app" {
     }
     type = var.app_service_type
   }
+}
+
+########################################
+# Outputs
+########################################
+output "ecr_repository_url" {
+  description = "URL do repositório ECR"
+  value       = aws_ecr_repository.app_repo.repository_url
+}
+
+output "eks_cluster_name" {
+  description = "Nome do cluster EKS"
+  value       = module.eks.cluster_id
+}
+
+output "load_balancer_ip" {
+  description = "Endereço do Load Balancer"
+  value       = kubernetes_service.app.status.0.load_balancer.0.ingress.0.hostname
 }
 
 ########################################
@@ -248,4 +296,10 @@ variable "app_service_type" {
   description = "Tipo de Service (ClusterIP, NodePort, LoadBalancer)"
   type        = string
   default     = "LoadBalancer"
+}
+
+variable "ecr_repository_name" {
+  description = "Nome do repositório ECR"
+  type        = string
+  default     = "myapp-ecr-repo"
 }
