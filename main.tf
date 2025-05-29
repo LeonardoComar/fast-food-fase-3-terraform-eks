@@ -89,7 +89,7 @@ module "eks" {
   # Defaults para todos os managed node groups
   eks_managed_node_group_defaults = {
     instance_types = [var.node_instance_type]
-    desired_size   = 2    # opcional, sobrepõe em cada grupo
+    desired_size   = 2
     min_size       = 1
     max_size       = 3
   }
