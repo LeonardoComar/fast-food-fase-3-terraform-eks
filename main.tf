@@ -89,9 +89,9 @@ module "eks" {
   # Cria um node group gerenciado
   node_groups = {
     default = {
-      desired_capacity                = 2
-      instance_types                  = [var.node_instance_type]
-      additional_security_group_ids   = [
+      desired_capacity = 2
+      instance_types   = [var.node_instance_type]
+      additional_security_group_ids = [
         data.terraform_remote_state.rds.outputs.db_security_group_id
       ]
     }
