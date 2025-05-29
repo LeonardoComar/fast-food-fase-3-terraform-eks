@@ -21,18 +21,6 @@ provider "aws" {
 }
 
 ########################################
-# Remote state do projeto de RDS
-########################################
-data "terraform_remote_state" "rds" {
-  backend = "s3"
-  config = {
-    bucket = var.rds_state_bucket
-    key    = var.rds_state_key
-    region = var.aws_region
-  }
-}
-
-########################################
 # VPC e Subnets padrão
 ########################################
 data "aws_vpc" "default" {
@@ -77,6 +65,10 @@ resource "aws_ecr_lifecycle_policy" "app_repo_policy" {
   })
 }
 
+data "aws_db_instance" "rds" {
+  db_instance_identifier = var.db_identifier
+}
+
 ########################################
 # EKS via module oficial
 ########################################
@@ -101,10 +93,7 @@ module "eks" {
   # Definição dos managed node groups
   eks_managed_node_groups = {
     default = {
-      # herdará instance_types, sizes, mas você pode sobrescrever se quiser
-      additional_security_group_ids = [
-        data.terraform_remote_state.rds.outputs.db_security_group_id
-      ]
+      additional_security_group_ids = data.aws_db_instance.rds.vpc_security_group_ids
     }
   }
 }
@@ -163,19 +152,19 @@ resource "kubernetes_deployment" "app" {
 
           env {
             name  = "DB_HOST"
-            value = data.terraform_remote_state.rds.outputs.db_endpoint
+            value = data.aws_db_instance.rds.endpoint
           }
           env {
             name  = "DB_NAME"
-            value = data.terraform_remote_state.rds.outputs.db_name
+            value = data.aws_db_instance.rds.name
           }
           env {
             name  = "DB_USER"
-            value = data.terraform_remote_state.rds.outputs.db_username
+            value = "admin"
           }
           env {
             name  = "DB_PASSWORD"
-            value = data.terraform_remote_state.rds.outputs.db_password
+            value = "Mudar123!"
           }
         }
       }
@@ -231,16 +220,6 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "rds_state_bucket" {
-  description = "Bucket S3 onde o estado do RDS está armazenado"
-  type        = string
-}
-
-variable "rds_state_key" {
-  description = "Caminho/Key do statefile do RDS"
-  type        = string
-}
-
 variable "cluster_name" {
   description = "Nome do cluster EKS"
   type        = string
@@ -277,12 +256,6 @@ variable "app_replicas" {
   default     = 2
 }
 
-variable "dockerhub_repo" {
-  description = "Repositório Docker Hub (ex.: leocomar/myapp)"
-  type        = string
-  default     = "leocomar/myapp"
-}
-
 variable "app_image_tag" {
   description = "Tag da imagem Docker"
   type        = string
@@ -311,4 +284,10 @@ variable "ecr_repository_name" {
   description = "Nome do repositório ECR"
   type        = string
   default     = "myapp-ecr-repo"
+}
+
+variable "db_identifier" {
+  description = "Identificador da instância RDS"
+  type        = string
+  default     = "my-rds-instance"
 }
