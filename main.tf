@@ -86,17 +86,25 @@ module "eks" {
   vpc_id     = data.aws_vpc.default.id
   subnet_ids = data.aws_subnet_ids.default.ids
 
-  # Cria um node group gerenciado
-  node_groups = {
+  # Defaults para todos os managed node groups
+  eks_managed_node_group_defaults = {
+    instance_types = [var.node_instance_type]
+    desired_size   = 2    # opcional, sobrepõe em cada grupo
+    min_size       = 1
+    max_size       = 3
+  }
+
+  # Definição dos managed node groups
+  eks_managed_node_groups = {
     default = {
-      desired_capacity = 2
-      instance_types   = [var.node_instance_type]
+      # herdará instance_types, sizes, mas você pode sobrescrever se quiser
       additional_security_group_ids = [
         data.terraform_remote_state.rds.outputs.db_security_group_id
       ]
     }
   }
 }
+
 
 ########################################
 # Provider Kubernetes para deploy
