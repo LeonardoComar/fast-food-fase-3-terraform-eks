@@ -34,6 +34,15 @@ data "aws_subnets" "default" {
   }
 }
 
+data "aws_security_group" "default" {
+  name   = "default"
+  vpc_id = data.aws_vpc.default.id
+}
+
+data "aws_db_instance" "rds" {
+  db_instance_identifier = var.db_identifier
+}
+
 ########################################
 # ECR Repository
 ########################################
@@ -65,10 +74,6 @@ resource "aws_ecr_lifecycle_policy" "app_repo_policy" {
   })
 }
 
-data "aws_db_instance" "rds" {
-  db_instance_identifier = var.db_identifier
-}
-
 ########################################
 # EKS via module oficial
 ########################################
@@ -93,7 +98,9 @@ module "eks" {
   # Definição dos managed node groups
   eks_managed_node_groups = {
     default = {
-      additional_security_group_ids = data.aws_db_instance.rds.vpc_security_group_ids
+      additional_security_group_ids = [
+        data.aws_security_group.default.id
+      ]
     }
   }
 }
@@ -156,7 +163,7 @@ resource "kubernetes_deployment" "app" {
           }
           env {
             name  = "DB_NAME"
-            value = data.aws_db_instance.rds.name
+            value = data.aws_db_instance.rds.db_name
           }
           env {
             name  = "DB_USER"
