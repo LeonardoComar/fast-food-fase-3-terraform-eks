@@ -89,16 +89,13 @@ module "eks" {
   # Cria um node group gerenciado
   node_groups = {
     default = {
-      desired_capacity = 2
-      instance_types   = [var.node_instance_type]
+      desired_capacity                = 2
+      instance_types                  = [var.node_instance_type]
+      additional_security_group_ids   = [
+        data.terraform_remote_state.rds.outputs.db_security_group_id
+      ]
     }
   }
-
-  # Permite que os nodes acessem o RDS
-  # Adiciona o SG do RDS como ingress permitido no SG dos nodes
-  node_group_additional_security_group_ids = [
-    data.terraform_remote_state.rds.outputs.db_security_group_id
-  ]
 }
 
 ########################################
