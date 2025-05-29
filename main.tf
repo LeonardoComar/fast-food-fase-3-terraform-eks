@@ -1,177 +1,81 @@
-terraform {
-  required_version = ">= 1.3.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.20"
-    }
-  }
-}
-
-########################################
-# Provider AWS (credenciais via Secrets)
-########################################
 provider "aws" {
-  region = var.aws_region
+  region = "us-east-1"
 }
 
-########################################
-# VPC e Subnets padrão
-########################################
-data "aws_vpc" "default" {
-  default = true
+data "aws_eks_cluster" "cluster" {
+  name = "fastfood"
 }
 
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
+data "aws_eks_cluster_auth" "cluster" {
+  name = data.aws_eks_cluster.cluster.name
 }
 
-data "aws_security_group" "default" {
-  name   = "default"
-  vpc_id = data.aws_vpc.default.id
-}
-
-data "aws_db_instance" "rds" {
-  db_instance_identifier = var.db_identifier
-}
-
-########################################
-# ECR Repository
-########################################
-resource "aws_ecr_repository" "app_repo" {
-  name                 = var.ecr_repository_name
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
-resource "aws_ecr_lifecycle_policy" "app_repo_policy" {
-  repository = aws_ecr_repository.app_repo.name
-
-  policy = jsonencode({
-    rules = [{
-      rulePriority = 1
-      description  = "Keep last 5 images"
-      selection = {
-        tagStatus   = "any"
-        countType   = "imageCountMoreThan"
-        countNumber = 5
-      }
-      action = {
-        type = "expire"
-      }
-    }]
-  })
-}
-
-########################################
-# EKS via module oficial
-########################################
-module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
-
-  cluster_name    = var.cluster_name
-  cluster_version = var.k8s_version
-
-  vpc_id     = data.aws_vpc.default.id
-  subnet_ids = data.aws_subnets.default.ids
-
-  # Defaults para todos os managed node groups
-  eks_managed_node_group_defaults = {
-    instance_types = [var.node_instance_type]
-    desired_size   = 2
-    min_size       = 1
-    max_size       = 3
-  }
-
-  # Definição dos managed node groups
-  eks_managed_node_groups = {
-    default = {
-      additional_security_group_ids = [
-        data.aws_security_group.default.id
-      ]
-    }
-  }
-}
-
-
-########################################
-# Provider Kubernetes para deploy
-########################################
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
 
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "aws"
-    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_id]
+resource "kubernetes_namespace" "app" {
+  metadata {
+    name = "fastfood-app"
   }
 }
 
-########################################
-# Deployment da aplicação no EKS
-########################################
 resource "kubernetes_deployment" "app" {
   metadata {
-    name      = var.app_name
-    namespace = var.app_namespace
-    labels = {
-      app = var.app_name
-    }
+    name      = "fastfood-app"
+    namespace = kubernetes_namespace.app.metadata[0].name
   }
 
   spec {
-    replicas = var.app_replicas
+    replicas = 1
 
     selector {
       match_labels = {
-        app = var.app_name
+        app = "fastfood"
       }
     }
 
     template {
       metadata {
         labels = {
-          app = var.app_name
+          app = "fastfood"
         }
       }
 
       spec {
         container {
-          name  = var.app_name
-          image = "${aws_ecr_repository.app_repo.repository_url}:${var.app_image_tag}"
-
-          port {
-            container_port = var.app_container_port
-          }
+          name  = "fastfood"
+          image = "587167200064.dkr.ecr.us-east-1.amazonaws.com/fiap/fastfood:latest"
 
           env {
             name  = "DB_HOST"
-            value = data.aws_db_instance.rds.endpoint
+            value = "my-rds-instance.chi8akyshzbu.us-east-1.rds.amazonaws.com"
           }
+
+          env {
+            name  = "DB_PORT"
+            value = "3306"
+          }
+
           env {
             name  = "DB_NAME"
-            value = data.aws_db_instance.rds.db_name
+            value = "db_fastfood"
           }
+
           env {
             name  = "DB_USER"
             value = "admin"
           }
+
           env {
             name  = "DB_PASSWORD"
             value = "Mudar123!"
+          }
+
+          port {
+            container_port = 8000
           }
         }
       }
@@ -179,122 +83,22 @@ resource "kubernetes_deployment" "app" {
   }
 }
 
-########################################
-# Service para expor o Deployment
-########################################
 resource "kubernetes_service" "app" {
   metadata {
-    name      = "${var.app_name}-svc"
-    namespace = var.app_namespace
+    name      = "fastfood-service"
+    namespace = kubernetes_namespace.app.metadata[0].name
   }
 
   spec {
     selector = {
-      app = var.app_name
+      app = "fastfood"
     }
+
     port {
-      port        = var.app_service_port
-      target_port = var.app_container_port
+      port        = 80
+      target_port = 8000
     }
-    type = var.app_service_type
+
+    type = "LoadBalancer"
   }
-}
-
-########################################
-# Outputs
-########################################
-output "ecr_repository_url" {
-  description = "URL do repositório ECR"
-  value       = aws_ecr_repository.app_repo.repository_url
-}
-
-output "eks_cluster_name" {
-  description = "Nome do cluster EKS"
-  value       = module.eks.cluster_id
-}
-
-output "load_balancer_ip" {
-  description = "Endereço do Load Balancer"
-  value       = kubernetes_service.app.status.0.load_balancer.0.ingress.0.hostname
-}
-
-########################################
-# Variáveis
-########################################
-variable "aws_region" {
-  description = "Região AWS"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "cluster_name" {
-  description = "Nome do cluster EKS"
-  type        = string
-  default     = "myapp-eks-cluster"
-}
-
-variable "k8s_version" {
-  description = "Versão do Kubernetes para o EKS"
-  type        = string
-  default     = "1.24"
-}
-
-variable "node_instance_type" {
-  description = "Tipo de instância para os nodes"
-  type        = string
-  default     = "t3.medium"
-}
-
-variable "app_name" {
-  description = "Nome da aplicação no Kubernetes"
-  type        = string
-  default     = "myapp"
-}
-
-variable "app_namespace" {
-  description = "Namespace onde a app será implantada"
-  type        = string
-  default     = "default"
-}
-
-variable "app_replicas" {
-  description = "Número de réplicas da aplicação"
-  type        = number
-  default     = 2
-}
-
-variable "app_image_tag" {
-  description = "Tag da imagem Docker"
-  type        = string
-  default     = "latest"
-}
-
-variable "app_container_port" {
-  description = "Porta exposta pelo container"
-  type        = number
-  default     = 8080
-}
-
-variable "app_service_port" {
-  description = "Porta do Service Kubernetes"
-  type        = number
-  default     = 80
-}
-
-variable "app_service_type" {
-  description = "Tipo de Service (ClusterIP, NodePort, LoadBalancer)"
-  type        = string
-  default     = "LoadBalancer"
-}
-
-variable "ecr_repository_name" {
-  description = "Nome do repositório ECR"
-  type        = string
-  default     = "myapp-ecr-repo"
-}
-
-variable "db_identifier" {
-  description = "Identificador da instância RDS"
-  type        = string
-  default     = "my-rds-instance"
 }
