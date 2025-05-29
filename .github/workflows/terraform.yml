@@ -1,5 +1,5 @@
 # .github/workflows/terraform.yml
-name: Terraform – EKS
+name: Terraform
 
 on:
   push:
