@@ -75,7 +75,7 @@ resource "kubernetes_deployment" "app" {
           }
 
           port {
-            container_port = 8000
+            container_port = 8080
           }
         }
       }
@@ -96,7 +96,7 @@ resource "kubernetes_service" "app" {
 
     port {
       port        = 80
-      target_port = 8000
+      target_port = 8080
     }
 
     type = "LoadBalancer"
