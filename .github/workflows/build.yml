@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Debug - List files in repository root
+        run: ls -la
+      
+      - name: Debug - List files in Terraform directory
+        run: ls -la Terraform
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Cleanup Terraform Cache
+        run: rm -rf Terraform/.terraform Terraform/.terraform.lock.hcl
+       
+      - name: Terraform Init
+        run: terraform init -upgrade -no-color | tee terraform-init.log
+        working-directory: Terraform
+
+      - name: Debug - Show Terraform Init Log
+        run: cat Terraform/terraform-init.log
+
+      - name: Terraform Format
+        run: terraform fmt -check -diff
+        working-directory: Terraform
+      
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: Terraform
+      
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan
+        working-directory: Terraform
+
+      - name: Terraform Plan Output
+        run: terraform show -no-color tfplan
+        continue-on-error: true
+        working-directory: Terraform

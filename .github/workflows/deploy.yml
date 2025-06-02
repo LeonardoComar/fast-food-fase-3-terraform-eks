@@ -1,0 +1,51 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Cleanup Terraform Cache
+        run: rm -rf .terraform .terraform.lock.hcl
+        working-directory: Terraform
+
+      - name: Terraform Init
+        run: terraform init -upgrade
+        working-directory: Terraform
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: Terraform
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        working-directory: Terraform
+
+      - name: Terraform Apply
+        if: github.ref_name == 'main'
+        run: terraform apply -auto-approve tfplan
+        working-directory: Terraform
