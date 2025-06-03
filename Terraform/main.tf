@@ -9,7 +9,7 @@ module "aws_eks" {
 module "kubernetes" {
   source = "./module/kubernetes"
 
-  fastfood_cluster           = module.aws_eks.fastfood_cluster
-  subnet_ids                 = local.subnet_privates_ids
-  security_group_id          = data.aws_security_group.fastfood_security_group.id
+  fastfood_cluster  = module.aws_eks.fastfood_cluster
+  subnet_ids        = local.subnet_privates_ids
+  security_group_id = data.aws_security_group.fastfood_security_group.id
 }
