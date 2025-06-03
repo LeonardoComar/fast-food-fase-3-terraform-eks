@@ -22,7 +22,7 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
       spec {
         container {
           name              = "fastfoodapi-container"
-          image             = "ghcr.io/renaneustaquio/fastfoodapi:latest"
+          image             = "ghcr.io/LeonardoComar/fastfoodapi:latest"
           image_pull_policy = "Always"
 
           port {

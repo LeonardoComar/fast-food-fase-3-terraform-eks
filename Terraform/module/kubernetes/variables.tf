@@ -21,7 +21,7 @@ variable "container_port" {
 
 variable "image" {
   type    = string
-  default = "ghcr.io/renaneustaquio/fastfoodapi:latest"
+  default = "ghcr.io/LeonardoComar/fastfoodapi:latest"
 }
 
 variable "replicas" {
