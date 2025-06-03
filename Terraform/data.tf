@@ -79,13 +79,4 @@ data "aws_security_group" "fastfood_security_group_rds" {
   }
 }
 
-data "aws_secretsmanager_secret" "aws_secretsmanager_secret_fastfood_4" {
-  name = "aws-secretsmanager-secret-fastfood-4"
-}
-
-data "aws_secretsmanager_secret_version" "aws_secretsmanager_secret_version_fastfood_4" {
-  secret_id = data.aws_secretsmanager_secret.aws_secretsmanager_secret_fastfood_4.id
-}
-
-
 
