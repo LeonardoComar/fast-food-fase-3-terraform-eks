@@ -60,45 +60,6 @@ variable "github_registry_name" {
   default = "github-registry-secret"
 }
 
-variable "mercado_pago_url_base" {
-  type    = string
-  default = "https://api.mercadopago.com/"
-}
-
-variable "mercado_pago_user_id" {
-  type    = string
-  default = "2198134554"
-}
-
-variable "mercado_pago_pos_id" {
-  type    = string
-  default = "PMCK002"
-}
-
-variable "mercado_pago_client_id" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "mercado_pago_client_secret" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "mercado_pago_client_credentials" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "mercado_pago_access_token" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
 variable "postgres_connection_string" {
   type        = string
   default     = ""
