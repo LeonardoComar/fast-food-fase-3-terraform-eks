@@ -22,26 +22,11 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
       spec {
         container {
           name              = "fastfoodapi-container"
-          image             = "ghcr.io/LeonardoComar/fastfoodapi:latest"
+          image             = "587167200064.dkr.ecr.us-east-1.amazonaws.com/fiap/fastfood:latest"
           image_pull_policy = "Always"
 
           port {
             container_port = var.container_port
-          }
-
-          env {
-            name  = "ASPNETCORE_ENVIRONMENT"
-            value = "Production"
-          }
-
-          env {
-            name = "ConnectionStrings__DefaultConnection"
-            value_from {
-              secret_key_ref {
-                name = var.secret_name
-                key  = "postgres-connection-string"
-              }
-            }
           }
 
           resources {

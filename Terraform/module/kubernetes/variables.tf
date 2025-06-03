@@ -21,7 +21,7 @@ variable "container_port" {
 
 variable "image" {
   type    = string
-  default = "ghcr.io/LeonardoComar/fastfoodapi:latest"
+  default = "587167200064.dkr.ecr.us-east-1.amazonaws.com/fiap/fastfood:latest"
 }
 
 variable "replicas" {
@@ -60,18 +60,12 @@ variable "github_registry_name" {
   default = "github-registry-secret"
 }
 
-variable "postgres_connection_string" {
-  type        = string
-  default     = ""
-  description = "Connection string for PostgreSQL"
-}
-
 ######### Cluster #########
 variable "fastfood_cluster" {
   type = any
 }
 
-######### Kubernetes Service#########
+######### Kubernetes Service #########
 variable "service_name" {
   type    = string
   default = "fastfoodapi-service"
