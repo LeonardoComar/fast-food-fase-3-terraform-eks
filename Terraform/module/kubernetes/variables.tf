@@ -21,7 +21,7 @@ variable "container_port" {
 
 variable "image" {
   type    = string
-  default = "587167200064.dkr.ecr.us-east-1.amazonaws.com/fiap/fastfood:latest"
+  default = "ghcr.io/LeonardoComar/fastfoodapi:latest"
 }
 
 variable "replicas" {
@@ -60,10 +60,10 @@ variable "github_registry_name" {
   default = "github-registry-secret"
 }
 
-variable "mysql_connection_string" {
+variable "postgres_connection_string" {
   type        = string
   default     = ""
-  description = "Connection string for MySQL"
+  description = "Connection string for PostgreSQL"
 }
 
 ######### Cluster #########

@@ -11,6 +11,10 @@ terraform {
   }
 }
 
+provider "aws" {
+  region = "us-east-1"
+}
+
 provider "helm" {
   kubernetes {
     host                   = module.aws_eks.fastfood_cluster.endpoint

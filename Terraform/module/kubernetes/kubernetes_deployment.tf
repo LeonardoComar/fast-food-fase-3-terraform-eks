@@ -22,7 +22,7 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
       spec {
         container {
           name              = "fastfoodapi-container"
-          image             = "587167200064.dkr.ecr.us-east-1.amazonaws.com/fiap/fastfood:latest"
+          image             = "ghcr.io/LeonardoComar/fastfoodapi:latest"
           image_pull_policy = "Always"
 
           port {
@@ -30,8 +30,8 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
           }
 
           env {
-            name  = "APP_ENV"
-            value = "production"
+            name  = "ASPNETCORE_ENVIRONMENT"
+            value = "Production"
           }
 
           env {
@@ -39,7 +39,7 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
             value_from {
               secret_key_ref {
                 name = var.secret_name
-                key  = "mysql-connection-string"
+                key  = "postgres-connection-string"
               }
             }
           }
