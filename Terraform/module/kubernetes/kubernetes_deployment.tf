@@ -22,7 +22,7 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
       spec {
         container {
           name              = "fastfoodapi-container"
-          image             = "587167200064.dkr.ecr.us-east-1.amazonaws.com/fiap/fastfood:latest"
+          image             = "ghcr.io/renaneustaquio/fastfoodapi:latest"
           image_pull_policy = "Always"
 
           port {
@@ -30,8 +30,8 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
           }
 
           env {
-            name  = "APP_ENV"
-            value = "production"
+            name  = "ASPNETCORE_ENVIRONMENT"
+            value = "Production"
           }
 
           env {
@@ -39,7 +39,62 @@ resource "kubernetes_deployment" "fastfoodapi_deployment" {
             value_from {
               secret_key_ref {
                 name = var.secret_name
-                key  = "mysql-connection-string"
+                key  = "postgres-connection-string"
+              }
+            }
+          }
+
+          env {
+            name  = "MercadoPago__UrlBase"
+            value = var.mercado_pago_url_base
+          }
+
+          env {
+            name = "MercadoPago__ClientSecret"
+            value_from {
+              secret_key_ref {
+                name = var.secret_name
+                key  = "mercado-pago-client-secret"
+              }
+            }
+          }
+
+          env {
+            name = "MercadoPago__ClientId"
+            value_from {
+              secret_key_ref {
+                name = var.secret_name
+                key  = "mercado-pago-client-id"
+              }
+            }
+          }
+
+          env {
+            name = "MercadoPago__ClientCredentials"
+            value_from {
+              secret_key_ref {
+                name = var.secret_name
+                key  = "mercado-pago-client-credentials"
+              }
+            }
+          }
+
+          env {
+            name  = "MercadoPago__UserId"
+            value = var.mercado_pago_user_id
+          }
+
+          env {
+            name  = "MercadoPago__PosId"
+            value = var.mercado_pago_pos_id
+          }
+
+          env {
+            name = "MercadoPago__AccessToken"
+            value_from {
+              secret_key_ref {
+                name = var.secret_name
+                key  = "mercado-pago-access-token"
               }
             }
           }

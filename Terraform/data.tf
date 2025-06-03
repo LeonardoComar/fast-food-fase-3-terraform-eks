@@ -10,47 +10,47 @@ data "aws_vpc" "fastfood_vpc" {
 }
 
 
-data "aws_subnet" "privada_1" {
+data "aws_subnet" "private_1" {
   filter {
     name   = "tag:Name"
-    values = ["fastfood-subnet-privada-1"]
+    values = ["fastfood-subnet-private-1"]
   }
 }
 
-data "aws_subnet" "privada_2" {
+data "aws_subnet" "private_2" {
   filter {
     name   = "tag:Name"
-    values = ["fastfood-subnet-privada-2"]
+    values = ["fastfood-subnet-private-2"]
   }
 }
 
-data "aws_subnet" "publica_1" {
+data "aws_subnet" "public_1" {
   filter {
     name   = "tag:Name"
-    values = ["fastfood-subnet-publica-1"]
+    values = ["fastfood-subnet-public-1"]
   }
 }
 
-data "aws_subnet" "publica_2" {
+data "aws_subnet" "public_2" {
   filter {
     name   = "tag:Name"
-    values = ["fastfood-subnet-publica-2"]
+    values = ["fastfood-subnet-public-2"]
   }
 }
 
 locals {
-  subnet_privadas_ids = [
-    data.aws_subnet.privada_1.id,
-    data.aws_subnet.privada_2.id
+  subnet_privates_ids = [
+    data.aws_subnet.private_1.id,
+    data.aws_subnet.private_2.id
   ]
 }
 
 locals {
   subnet_todas_ids = [
-    data.aws_subnet.privada_1.id,
-    data.aws_subnet.privada_2.id,
-    data.aws_subnet.publica_1.id,
-    data.aws_subnet.publica_2.id
+    data.aws_subnet.private_1.id,
+    data.aws_subnet.private_2.id,
+    data.aws_subnet.public_1.id,
+    data.aws_subnet.public_2.id
   ]
 }
 
@@ -79,12 +79,12 @@ data "aws_security_group" "fastfood_security_group_rds" {
   }
 }
 
-data "aws_secretsmanager_secret" "aws_secretsmanager_secret_fastfood" {
-  name = "aws-secretsmanager-secret-fastfood"
+data "aws_secretsmanager_secret" "aws_secretsmanager_secret_fastfood_2" {
+  name = "aws-secretsmanager-secret-fastfood-2"
 }
 
-data "aws_secretsmanager_secret_version" "aws_secretsmanager_secret_version_fastfood" {
-  secret_id = data.aws_secretsmanager_secret.aws_secretsmanager_secret_fastfood.id
+data "aws_secretsmanager_secret_version" "aws_secretsmanager_secret_version_fastfood_2" {
+  secret_id = data.aws_secretsmanager_secret.aws_secretsmanager_secret_fastfood_2.id
 }
 
 

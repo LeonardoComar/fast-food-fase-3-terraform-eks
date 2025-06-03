@@ -31,7 +31,7 @@ resource "aws_lambda_function" "fastfoodapi_lambda" {
   environment {
     variables = {
       USER_POOLID = data.aws_cognito_user_pool.fastfood_user_pool.id
-      API_URL     = "http://${kubernetes_service.fastfoodapi_service.status[0].load_balancer[0].ingress[0].hostname}/api/clients/filter"
+      API_URL     = "http://${kubernetes_service.fastfoodapi_service.status[0].load_balancer[0].ingress[0].hostname}/api/Clientes/filtrar"
     }
   }
 
